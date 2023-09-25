@@ -1,5 +1,4 @@
 var Robots = require('./Robots');
 
-module.exports = function (url, contents) {
-	return new Robots(url, contents);
-};
+module.exports.robotsParser = Robots;
+module.exports.matches = matches;
