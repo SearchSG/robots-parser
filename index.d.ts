@@ -10,7 +10,7 @@ interface IRule {
 	pattern: string;
 }
 
-interface IRobot {
+export interface IRobot {
 	isAllowed(url: string, ua?: string): boolean | undefined;
 	isDisallowed(url: string, ua?: string): boolean | undefined;
 	getMatchingLineNumber(url: string, ua?: string): number;
