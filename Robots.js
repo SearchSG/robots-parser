@@ -286,200 +286,188 @@ function parseUrl(url) {
 	}
 }
 
-function Robots(url, contents) {
-	this._url = parseUrl(url) || {};
-	this._rules = Object.create(null);
-	this._sitemaps = [];
-	this._preferredHost = null;
+class Robots {
+	constructor(url, contents) {
+		this._url = parseUrl(url) || {};
+		this._rules = Object.create(null);
+		this._sitemaps = [];
+		this._preferredHost = null;
 
-	parseRobots(contents || '', this);
-}
+		parseRobots(contents || '', this);
+	}
+	/**
+	 * Adds the specified allow/deny rule to the rules
+	 * for the specified user-agents.
+	 *
+	 * @param {Array.<string>} userAgents
+	 * @param {string} pattern
+	 * @param {boolean} allow
+	 * @param {number} [lineNumber] Should use 1-based indexing
+	 */
+	addRule(userAgents, pattern, allow, lineNumber) {
+		var rules = this._rules;
 
-/**
- * Adds the specified allow/deny rule to the rules
- * for the specified user-agents.
- *
- * @param {Array.<string>} userAgents
- * @param {string} pattern
- * @param {boolean} allow
- * @param {number} [lineNumber] Should use 1-based indexing
- */
-Robots.prototype.addRule = function (userAgents, pattern, allow, lineNumber) {
-	var rules = this._rules;
+		userAgents.forEach(function (userAgent) {
+			rules[userAgent] = rules[userAgent] || [];
 
-	userAgents.forEach(function (userAgent) {
-		rules[userAgent] = rules[userAgent] || [];
+			if (!pattern) {
+				return;
+			}
 
-		if (!pattern) {
-			return;
-		}
-
-		rules[userAgent].push({
-			pattern: normaliseEncoding(pattern),
-			allow: allow,
-			lineNumber: lineNumber
+			rules[userAgent].push({
+				pattern: normaliseEncoding(pattern),
+				allow: allow,
+				lineNumber: lineNumber
+			});
 		});
-	});
-};
+	}
+	/**
+	 * Adds the specified delay to the specified user agents.
+	 *
+	 * @param {Array.<string>} userAgents
+	 * @param {string} delayStr
+	 */
+	setCrawlDelay(userAgents, delayStr) {
+		var rules = this._rules;
+		var delay = Number(delayStr);
 
-/**
- * Adds the specified delay to the specified user agents.
- *
- * @param {Array.<string>} userAgents
- * @param {string} delayStr
- */
-Robots.prototype.setCrawlDelay = function (userAgents, delayStr) {
-	var rules = this._rules;
-	var delay = Number(delayStr);
+		userAgents.forEach(function (userAgent) {
+			rules[userAgent] = rules[userAgent] || [];
 
-	userAgents.forEach(function (userAgent) {
-		rules[userAgent] = rules[userAgent] || [];
+			if (isNaN(delay)) {
+				return;
+			}
 
-		if (isNaN(delay)) {
+			rules[userAgent].crawlDelay = delay;
+		});
+	}
+	/**
+	 * Add a sitemap
+	 *
+	 * @param {string} url
+	 */
+	addSitemap(url) {
+		this._sitemaps.push(url);
+	}
+	/**
+	 * Sets the preferred host name
+	 *
+	 * @param {string} url
+	 */
+	setPreferredHost(url) {
+		this._preferredHost = url;
+	}
+	_getRule(url, ua) {
+		var parsedUrl = parseUrl(url) || {};
+		var userAgent = formatUserAgent(ua || '*');
+
+		// The base URL must match otherwise this robots.txt is not valid for it.
+		if (parsedUrl.protocol !== this._url.protocol ||
+			parsedUrl.hostname !== this._url.hostname ||
+			parsedUrl.port !== this._url.port) {
 			return;
 		}
 
-		rules[userAgent].crawlDelay = delay;
-	});
-};
+		var rules = this._rules[userAgent] || this._rules['*'] || [];
+		var path = urlEncodeToUpper(parsedUrl.pathname + parsedUrl.search);
+		var rule = findRule(path, rules);
 
-/**
- * Add a sitemap
- *
- * @param {string} url
- */
-Robots.prototype.addSitemap = function (url) {
-	this._sitemaps.push(url);
-};
-
-/**
- * Sets the preferred host name
- *
- * @param {string} url
- */
-Robots.prototype.setPreferredHost = function (url) {
-	this._preferredHost = url;
-};
-
-Robots.prototype._getRule = function (url, ua) {
-	var parsedUrl = parseUrl(url) || {};
-	var userAgent = formatUserAgent(ua || '*');
-
-	// The base URL must match otherwise this robots.txt is not valid for it.
-	if (
-		parsedUrl.protocol !== this._url.protocol ||
-		parsedUrl.hostname !== this._url.hostname ||
-		parsedUrl.port !== this._url.port
-	) {
-		return;
+		return rule;
 	}
+	/**
+	 * Returns true if allowed, false if not allowed.
+	 *
+	 * Will return undefined if the URL is not valid for
+	 * this robots.txt file.
+	 *
+	 * @param  {string}  url
+	 * @param  {string?}  ua
+	 * @return {boolean?}
+	 */
+	isAllowed(url, ua) {
+		var rule = this._getRule(url, ua);
 
-	var rules = this._rules[userAgent] || this._rules['*'] || [];
-	var path = urlEncodeToUpper(parsedUrl.pathname + parsedUrl.search);
-	var rule = findRule(path, rules);
+		if (typeof rule === 'undefined') {
+			return;
+		}
 
-	return rule;
-};
-
-/**
- * Returns true if allowed, false if not allowed.
- *
- * Will return undefined if the URL is not valid for
- * this robots.txt file.
- *
- * @param  {string}  url
- * @param  {string?}  ua
- * @return {boolean?}
- */
-Robots.prototype.isAllowed = function (url, ua) {
-	var rule = this._getRule(url, ua);
-
-	if (typeof rule === 'undefined') {
-		return;
+		return !rule || rule.allow;
 	}
+	/**
+	 * Returns the line number of the matching directive for the specified
+	 * URL and user-agent if any.
+	 *
+	 * The line numbers start at 1 and go up (1-based indexing).
+	 *
+	 * Return -1 if there is no matching directive. If a rule is manually
+	 * added without a lineNumber then this will return undefined for that
+	 * rule.
+	 *
+	 * @param  {string}  url
+	 * @param  {string?}  ua
+	 * @return {number?}
+	 */
+	getMatchingLineNumber(url, ua) {
+		var rule = this._getRule(url, ua);
 
-	return !rule || rule.allow;
-};
+		return rule ? rule.lineNumber : -1;
+	}
+	/**
+	 * Returns the opposite of isAllowed()
+	 *
+	 * @param  {string}  url
+	 * @param  {string}  ua
+	 * @return {boolean}
+	 */
+	isDisallowed(url, ua) {
+		return !this.isAllowed(url, ua);
+	}
+	/**
+	 * Gets the crawl delay if there is one.
+	 *
+	 * Will return undefined if there is no crawl delay set.
+	 *
+	 * @param  {string} ua
+	 * @return {number?}
+	 */
+	getCrawlDelay(ua) {
+		var userAgent = formatUserAgent(ua || '*');
 
-/**
- * Returns the line number of the matching directive for the specified
- * URL and user-agent if any.
- *
- * The line numbers start at 1 and go up (1-based indexing).
- *
- * Return -1 if there is no matching directive. If a rule is manually
- * added without a lineNumber then this will return undefined for that
- * rule.
- *
- * @param  {string}  url
- * @param  {string?}  ua
- * @return {number?}
- */
-Robots.prototype.getMatchingLineNumber = function (url, ua) {
-	var rule = this._getRule(url, ua);
-
-	return rule ? rule.lineNumber : -1;
-};
-
-/**
- * Returns the opposite of isAllowed()
- *
- * @param  {string}  url
- * @param  {string}  ua
- * @return {boolean}
- */
-Robots.prototype.isDisallowed = function (url, ua) {
-	return !this.isAllowed(url, ua);
-};
-
-/**
- * Gets the crawl delay if there is one.
- *
- * Will return undefined if there is no crawl delay set.
- *
- * @param  {string} ua
- * @return {number?}
- */
-Robots.prototype.getCrawlDelay = function (ua) {
-	var userAgent = formatUserAgent(ua || '*');
-
-	return (this._rules[userAgent] || this._rules['*'] || {}).crawlDelay;
-};
-
-/**
- * Returns the preferred host if there is one.
- *
- * @return {string?}
- */
-Robots.prototype.getPreferredHost = function () {
-	return this._preferredHost;
-};
-
-/**
- * Returns an array of sitemap URLs if there are any.
- *
- * @return {Array.<string>}
- */
-Robots.prototype.getSitemaps = function () {
-	return this._sitemaps.slice(0);
-};
-
-/**
- * Returns an array of objects containing property of rules for 
- * the specified user-agent if any.
- * 
- * @typedef RuleProperty
- * @property {boolean} allow
- * @property {number} lineNumber
- * @property {string} pattern 
- * 
- * @param {string} ua 
- * @return {IRule[]} list of rules indicating allow/disallow, line number and its pattern
- */
-Robots.prototype.getAllRules = function (ua) {
-	var userAgent = formatUserAgent(ua || '*');
-	return this._rules[userAgent] || this._rules['*'] || [];
-};
+		return (this._rules[userAgent] || this._rules['*'] || {}).crawlDelay;
+	}
+	/**
+	 * Returns the preferred host if there is one.
+	 *
+	 * @return {string?}
+	 */
+	getPreferredHost() {
+		return this._preferredHost;
+	}
+	/**
+	 * Returns an array of sitemap URLs if there are any.
+	 *
+	 * @return {Array.<string>}
+	 */
+	getSitemaps() {
+		return this._sitemaps.slice(0);
+	}
+	/**
+	 * Returns an array of objects containing property of rules for
+	 * the specified user-agent if any.
+	 *
+	 * @typedef RuleProperty
+	 * @property {boolean} allow
+	 * @property {number} lineNumber
+	 * @property {string} pattern
+	 *
+	 * @param {string} ua
+	 * @return {IRule[]} list of rules indicating allow/disallow, line number and its pattern
+	 */
+	getAllRules(ua) {
+		var userAgent = formatUserAgent(ua || '*');
+		return this._rules[userAgent] || this._rules['*'] || [];
+	}
+}
 
 module.exports = {
 	Robots,
