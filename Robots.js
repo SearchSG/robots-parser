@@ -480,3 +480,8 @@ Robots.prototype.getAllRules = function (ua) {
 	var userAgent = formatUserAgent(ua || '*');
 	return this._rules[userAgent] || this._rules['*'] || [];
 };
+
+module.exports = {
+	Robots,
+	matches
+};
