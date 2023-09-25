@@ -17,7 +17,8 @@ interface IRobot {
 	getCrawlDelay(ua?: string): number | undefined;
 	getSitemaps(): string[];
 	getPreferredHost(): string | null;
-	getAllRules(): IRule[];
+	getAllRules(ua?: string): IRule[];
 }
 
-export default function robotsParser(url: string, robotstxt: string): IRobot;
+export function parser(url: string, robotstxt: string): IRobot;
+export function matches(pattern: string, path: string): boolean;

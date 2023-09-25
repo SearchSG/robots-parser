@@ -481,4 +481,7 @@ Robots.prototype.getAllRules = function (ua) {
 	return this._rules[userAgent] || this._rules['*'] || [];
 };
 
-module.exports = Robots;
+export default {
+	Robots,
+	matches
+};
