@@ -1,6 +1,6 @@
 {
 	"name": "@searchsg/robots-parser",
-	"version": "3.0.2",
+	"version": "3.0.3",
 	"description": "A specification compliant robots.txt parser with wildcard (*) matching support.",
 	"keywords": [
 		"robots.txt",
@@ -53,5 +53,8 @@
 		"mocha": "^10.0.0",
 		"nyc": "^15.1.0"
 	},
-	"types": "./index.d.ts"
+	"types": "./index.d.ts",
+	"dependencies": {
+		"@searchsg/robots-parser": "^3.0.2"
+	}
 }

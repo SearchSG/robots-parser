@@ -10,7 +10,7 @@ interface IRule {
 	pattern: string;
 }
 
-interface Robot {
+interface IRobot {
 	isAllowed(url: string, ua?: string): boolean | undefined;
 	isDisallowed(url: string, ua?: string): boolean | undefined;
 	getMatchingLineNumber(url: string, ua?: string): number;
@@ -20,4 +20,4 @@ interface Robot {
 	getAllRules(): IRule[];
 }
 
-export default function robotsParser(url: string, robotstxt: string): Robot;
+export default function robotsParser(url: string, robotstxt: string): IRobot;
