@@ -464,4 +464,21 @@ Robots.prototype.getSitemaps = function () {
 	return this._sitemaps.slice(0);
 };
 
+/**
+ * Returns an array of objects containing property of rules for 
+ * the specified user-agent if any.
+ * 
+ * @typedef RuleProperty
+ * @property {boolean} allow
+ * @property {number} lineNumber
+ * @property {string} pattern 
+ * 
+ * @param {string} ua 
+ * @return {IRule[]} list of rules indicating allow/disallow, line number and its pattern
+ */
+Robots.prototype.getAllRules = function (ua) {
+	var userAgent = formatUserAgent(ua || '*');
+	return this._rules[userAgent] || this._rules['*'] || [];
+};
+
 module.exports = Robots;

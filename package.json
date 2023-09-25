@@ -1,5 +1,5 @@
 {
-	"name": "robots-parser",
+	"name": "@searchsg/robots-parser",
 	"version": "3.0.1",
 	"description": "A specification compliant robots.txt parser with wildcard (*) matching support.",
 	"keywords": [
@@ -13,7 +13,7 @@
 	],
 	"main": "index.js",
 	"directories": {
-		"test": "tests"
+		"test": "test"
 	},
 	"homepage": "https://github.com/samclarke/robots-parser",
 	"bugs": {
@@ -24,7 +24,7 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/samclarke/robots-parser.git"
+		"url": "git+https://github.com/SearchSG/robots-parser.git"
 	},
 	"author": "Sam Clarke <sam@samclarke.com>",
 	"license": "MIT",
