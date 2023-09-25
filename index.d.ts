@@ -20,5 +20,6 @@ interface IRobot {
 	getAllRules(ua?: string): IRule[];
 }
 
-export function parser(url: string, robotstxt: string): IRobot;
+export { Robots as robotsParser };
+export function Robots(url: string, robotstxt: string): IRobot;
 export function matches(pattern: string, path: string): boolean;
